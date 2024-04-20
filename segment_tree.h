@@ -19,13 +19,13 @@ private:
             tree[node] = op(tree[2 * node],tree[2 * node + 1]);
         }
     }
-    T nado(T a, T b){
+    T min_index(T a, T b){
         if(min(a,b)==-1){
             return max(a,b);
         }
         return min(a,b);
     }
-    T find_el(lli node,lli start,lli end,lli element,lli left){
+    T first_up(lli node,lli start,lli end,lli element,lli left){
         if(tree[node]<element or end<=left){
             return identity_element;
         }
@@ -35,14 +35,14 @@ private:
                 return start;
             }
             if(tree[2*node]>=element){
-                return find_el(2*node,start,mid,element,left);
+                return first_up(2*node,start,mid,element,left);
             }
-            return find_el(2*node+1,mid,end,element,left);
+            return first_up(2*node+1,mid,end,element,left);
         }
-        return nado(find_el(2*node,start,mid,element,left),find_el(2*node+1,mid,end,element,left));
+        return min_index(first_up(2*node,start,mid,element,left),first_up(2*node+1,mid,end,element,left));
     }
 
-    T query(lli node, lli start, lli end, lli l, lli r) {
+    T rec_accum(lli node, lli start, lli end, lli l, lli r) {
         // cout<<tree[node]<<" "<<start<<" "<<end<<" "<<l<<" "<<r<<"\n";
         if (r < start or end <= l) {
             return identity_element; 
@@ -51,7 +51,7 @@ private:
             return tree[node];
         }
         lli mid = (start + end) / 2;
-        return op(query(2 * node, start, mid, l, r) ,query(2 * node + 1, mid, end, l, r));
+        return op(rec_accum(2 * node, start, mid, l, r) ,rec_accum(2 * node + 1, mid, end, l, r));
     }
 
     void update(lli node, lli start, lli end, lli idx, lli val) {
@@ -98,11 +98,11 @@ public:
         tree.resize(2*n,identity_element); // По формуле размер дерева в случае полного бинарного дерева
         build(1, 0, n);
     }
-    T sum_of(lli l, lli r) {
-        return query(1, 0, n, l, r);
+    T accumulate(lli l, lli r) {
+        return rec_accum(1, 0, n, l, r);
     }
-    T find_element(lli element,lli left = 0){
-        return find_el(1,0,n,element,left);
+    T first_upper(lli element,lli left = 0){
+        return first_up(1,0,n,element,left);
     }
     void updateValue(lli idx, lli val) {
         update(1, 0, n, idx, val);
