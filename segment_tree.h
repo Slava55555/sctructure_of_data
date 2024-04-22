@@ -43,7 +43,6 @@ private:
     }
 
     T rec_accum(lli node, lli start, lli end, lli l, lli r) {
-        // cout<<tree[node]<<" "<<start<<" "<<end<<" "<<l<<" "<<r<<"\n";
         if (r < start or end <= l) {
             return identity_element; 
         }
