@@ -95,7 +95,7 @@ public:
         n = 1 << (N);
         input.resize(n,identity_element);
         arr = input;
-        tree.resize(2*n,identity_element); // По формуле размер дерева в случае полного бинарного дерева
+        tree.resize(2*n,identity_element);
         build(1, 0, n);
     }
     T accumulate(lli l, lli r) {
