@@ -6,6 +6,8 @@ class SegmentTree {
 private:
     vector<T> tree;
     vector<T> arr;
+    vector<pair<T,T>>lazy;
+    vector<bool>was;
     operation op;
     lli n;
     void build(lli node, lli start, lli end) {
@@ -19,6 +21,38 @@ private:
             tree[node] = op(tree[2 * node],tree[2 * node + 1]);
         }
     }
+    //редактировать push
+    void push(lli node, lli start, lli end) {
+        if (was[node]) {
+            if (lazy[node].first == 1) {
+                tree[node] = lazy[node].second * (end - start);
+                if (start != end - 1) {
+                    lazy[2 * node] = lazy[node];
+                    lazy[2 * node + 1] = lazy[node];
+                    was[2 * node] = true;
+                    was[2 * node + 1] = true;
+                }
+            } 
+            else if (lazy[node].first == 2 && lazy[node].second != 0) { // Проверка на ненулевое значение 
+                tree[node] += lazy[node].second * (end - start);
+                if (start != end - 1) {
+                    if (lazy[2 * node].first != 1) {
+                        lazy[2 * node].first = 2;
+                    }
+                    if (lazy[2 * node + 1].first != 1) {
+                        lazy[2 * node + 1].first = 2;
+                    }
+                    lazy[2 * node].second += lazy[node].second;
+                    lazy[2 * node + 1].second += lazy[node].second;
+                    was[2 * node] = true;
+                    was[2 * node + 1] = true;
+                }
+            }
+            lazy[node] = {0, 0};
+            was[node] = false;
+        }
+        // print();
+    }
     T min_index(T a, T b){
         if(min(a,b)==-1){
             return max(a,b);
@@ -26,6 +60,7 @@ private:
         return min(a,b);
     }
     T first_up(lli node,lli start,lli end,lli element,lli left){
+        push(node, start, end); 
         if(tree[node]<element or end<=left){
             return identity_element;
         }
@@ -43,7 +78,9 @@ private:
     }
 
     T rec_accum(lli node, lli start, lli end, lli l, lli r) {
-        if (r < start or end <= l) {
+        // Применить отложенные операции перед проверкой условий
+        push(node, start, end);  
+        if (r <= start or end <= l) {
             return identity_element; 
         }
         if (l <= start and end <= r) {
@@ -52,38 +89,38 @@ private:
         lli mid = (start + end) / 2;
         return op(rec_accum(2 * node, start, mid, l, r) ,rec_accum(2 * node + 1, mid, end, l, r));
     }
-
-    void update(lli node, lli start, lli end, lli idx, lli val) {
-        if (start == end-1) {
-            arr[idx] = val;
-            tree[node] = val;
-        } 
+    void R(lli node, lli start, lli end, lli left, lli right, lli val, lli type) {
+        push(node, start, end); // Применить отложенные операции перед проверкой условий
+        if (start >= left && end <= right) {
+            if (type == 1) {
+                lazy[node] = {1, val};
+            } 
+            else {
+                if (lazy[node].first != 1) {
+                    lazy[node].first = 2;
+                }
+                lazy[node].second += val;
+            }
+            was[node] = true;
+            push(node, start, end); // Применить отложенные операции после обновления
+        }
         else {
             lli mid = (start + end) / 2;
-            if (idx < mid) {
-                update(2 * node, start, mid, idx, val);
-            }
+            push(2*node,start,mid);
+            push(2*node+1,mid,end);
+            if (right <= mid) {
+                R(2 * node, start, mid, left, right, val, type);
+            } 
+            else if (mid <= left) {
+                R(2 * node + 1, mid, end, left, right, val, type);
+            } 
             else {
-                update(2 * node + 1, mid, end, idx, val);
+                R(2 * node, start, mid, left, right, val, type);
+                R(2 * node + 1, mid, end, left, right, val, type);
             }
-            tree[node] = op(tree[2 * node],tree[2 * node + 1]);
+            tree[node] = op(tree[2 * node], tree[2 * node + 1]); 
         }
     }
-    void print(){
-        int t=0;
-        int v=1;
-        for(int i = 1; i < tree.size(); i++){
-            cout<<tree[i]<<" ";
-            t++;
-            if(t==v){
-                cout<<"\n";
-                v*=2;
-                t=0;
-            }
-        }
-        cout<<"--------------------\n";
-    }
-
 public:
     SegmentTree(operation _op,vector<lli>& input): op(_op) {
         n = input.size();
@@ -95,6 +132,8 @@ public:
         input.resize(n,identity_element);
         arr = input;
         tree.resize(2*n,identity_element);
+        lazy.resize(2*n);
+        was.resize(2*n);
         build(1, 0, n);
     }
     T accumulate(lli l, lli r) {
@@ -103,10 +142,12 @@ public:
     T first_upper(lli element,lli left = 0){
         return first_up(1,0,n,element,left);
     }
-    void updateValue(lli idx, lli val) {
-        update(1, 0, n, idx, val);
+    // установить значение val на отрезке [l, r-1]
+    void set(lli l, lli r, lli val) {
+        R(1,0,n,l, r, val, 1); 
     }
-    void print_tree(){
-        print();
+    // прибавить val к каждому элементу на отрезке [l, r-1]
+    void add(lli l, lli r, lli val) {
+        R(1,0,n,l, r, val, 2); 
     }
 };
